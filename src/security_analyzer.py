@@ -50,3 +50,21 @@ with open(log_file, "r") as file:
     for line in file:
         timestamp, event, username, ip = parse_log_line(line)
         print(timestamp, event, username, ip)
+print("\nSuccessful logins after failed attempts:")
+
+failed_before_success = {}
+
+with open(log_file, "r") as file:
+    for line in file:
+        timestamp, event, username, ip = parse_log_line(line)
+
+        if event == "LOGIN_FAILED":
+            failed_before_success[ip] = failed_before_success.get(ip, 0) + 1
+
+        elif event == "LOGIN_SUCCESS" and ip in failed_before_success:
+            if failed_before_success[ip] > 0:
+                print(
+                    f"ALERT: {ip} had "
+                    f"{failed_before_success[ip]} failed attempts "
+                    f"before a successful login"
+                )        
