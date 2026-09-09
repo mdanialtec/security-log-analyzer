@@ -1,5 +1,6 @@
 from pathlib import Path
 from collections import Counter
+import sys
 
 def parse_log_line(line):
     parts = line.strip().split()
@@ -26,9 +27,13 @@ log_file = Path("sample.log")
 print("Security Log Analyzer")
 print(f"Reading log file: {log_file}")
 
-with open(log_file, "r") as file:
-    for line in file:
-        print(line.strip())
+try:
+    with open(log_file, "r") as file:
+        for line in file:
+            print(line.strip())
+except FileNotFoundError:
+    print(f"ERROR: Log file not found: {log_file}")
+    sys.exit(1)
 
 failed_logins = 0
 failed_ips = []
