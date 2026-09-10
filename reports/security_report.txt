@@ -1,0 +1,18 @@
+Security Log Analyzer Report
+===========================
+
+Total failed login attempts: 10
+
+Failed login attempts by IP:
+10.0.0.15: 5
+10.0.0.25: 2
+10.0.0.30: 3
+
+Brute-force detections:
+HIGH: Possible brute-force attack from 10.0.0.15 with 5 failed attempts (risk score: 60)
+
+Successful logins after failed attempts:
+CRITICAL: 10.0.0.25 had 2 failed attempts before a successful login (risk score: 80)
+
+Password spraying detections:
+MEDIUM: Possible password spraying from 10.0.0.30 targeting 3 users (risk score: 40)
