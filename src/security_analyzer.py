@@ -22,6 +22,15 @@ def get_severity(risk_score):
     else:
         return "LOW"
 
+def detect_bruteforce(count):
+    if count >= 10:
+        return 80
+    elif count >= 8:
+        return 70
+    elif count >= 5:
+        return 60
+    return 0
+
 log_file = Path("sample.log")
 
 print("Security Log Analyzer")
@@ -56,20 +65,16 @@ for ip, count in ip_counts.items():
 print("\nSuspicious IPs:")
 
 for ip, count in ip_counts.items():
-    if count >= 5:
-        if count >= 10:
-            risk_score = 80
-        elif count >= 8:
-            risk_score = 70
-        else:
-            risk_score = 60
+    risk_score = detect_bruteforce(count)
 
+    if risk_score > 0:
         severity = get_severity(risk_score)
         print(
             f"{severity}: Possible brute-force attack from {ip} "
             f"with {count} failed attempts "
             f"(risk score: {risk_score})"
         )
+
 
 print("\nParsed events:")
 
