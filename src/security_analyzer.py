@@ -31,6 +31,11 @@ def detect_bruteforce(count):
         return 60
     return 0
 
+def detect_success_after_failure(count):
+    if count > 0:
+        return 80
+    return 0
+
 def detect_success_after_failure(failed_count):
     if failed_count > 0:
         return 80
