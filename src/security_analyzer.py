@@ -31,6 +31,11 @@ def detect_bruteforce(count):
         return 60
     return 0
 
+def detect_success_after_failure(failed_count):
+    if failed_count > 0:
+        return 80
+    return 0
+
 log_file = Path("sample.log")
 
 print("Security Log Analyzer")
@@ -94,8 +99,11 @@ with open(log_file, "r") as file:
             failed_before_success[ip] = failed_before_success.get(ip, 0) + 1
 
         elif event == "LOGIN_SUCCESS" and ip in failed_before_success:
-           if failed_before_success[ip] > 0:
-               risk_score = 80
+           risk_score = detect_success_after_failure(
+               failed_before_success[ip]
+           )
+
+           if risk_score > 0:
                severity = get_severity(risk_score)
                print(
                    f"{severity}: {ip} had "
