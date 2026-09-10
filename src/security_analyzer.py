@@ -36,9 +36,13 @@ def detect_success_after_failure(count):
         return 80
     return 0
 
-def detect_success_after_failure(failed_count):
-    if failed_count > 0:
-        return 80
+def detect_password_spraying(user_count):
+    if user_count >= 7:
+        return 60
+    elif user_count >= 5:
+        return 50
+    elif user_count >= 3:
+        return 40
     return 0
 
 log_file = Path("sample.log")
@@ -134,12 +138,7 @@ with open(log_file, "r") as file:
 
 for ip, users in users_by_ip.items():
     if len(users) >= 3:
-        if len(users) >= 7:
-            risk_score = 60
-        elif len(users) >= 5:
-            risk_score = 50
-        else:
-            risk_score = 40
+        risk_score = detect_password_spraying(len(users))
 
         severity = get_severity(risk_score)
         print(
