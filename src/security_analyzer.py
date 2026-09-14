@@ -5,6 +5,14 @@ import sys
 
 BRUTE_FORCE_WINDOW_MINUTES = 5
 
+BRUTE_FORCE_HIGH_THRESHOLD = 5
+BRUTE_FORCE_HIGH_RISK_THRESHOLD = 8
+BRUTE_FORCE_CRITICAL_THRESHOLD = 10
+
+PASSWORD_SPRAYING_MEDIUM_THRESHOLD = 3
+PASSWORD_SPRAYING_HIGH_RISK_THRESHOLD = 5
+PASSWORD_SPRAYING_HIGH_THRESHOLD = 7
+
 def parse_log_line(line):
     parts = line.strip().split()
 
@@ -38,11 +46,11 @@ def get_severity(risk_score):
         return "LOW"
 
 def detect_bruteforce(count):
-    if count >= 10:
+    if count >= BRUTE_FORCE_CRITICAL_THRESHOLD:
         return 80
-    elif count >= 8:
+    elif count >= BRUTE_FORCE_HIGH_RISK_THRESHOLD:
         return 70
-    elif count >= 5:
+    elif count >= BRUTE_FORCE_HIGH_THRESHOLD:
         return 60
     return 0
 
@@ -77,11 +85,11 @@ def detect_success_after_failure(count):
     return 0
 
 def detect_password_spraying(user_count):
-    if user_count >= 7:
+    if user_count >= PASSWORD_SPRAYING_HIGH_THRESHOLD:
         return 60
-    elif user_count >= 5:
+    elif user_count >= PASSWORD_SPRAYING_HIGH_RISK_THRESHOLD:
         return 50
-    elif user_count >= 3:
+    elif user_count >= PASSWORD_SPRAYING_MEDIUM_THRESHOLD:
         return 40
     return 0
 
