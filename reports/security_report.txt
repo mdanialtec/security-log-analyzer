@@ -9,7 +9,7 @@ Failed login attempts by IP:
 10.0.0.30: 3
 
 Brute-force detections:
-HIGH: Possible brute-force attack from 10.0.0.15 with 5 failed attempts (risk score: 60)
+HIGH: Possible brute-force attack from 10.0.0.15 within 5 minutes (risk score: 60)
 
 Successful logins after failed attempts:
 CRITICAL: 10.0.0.25 had 2 failed attempts before a successful login (risk score: 80)

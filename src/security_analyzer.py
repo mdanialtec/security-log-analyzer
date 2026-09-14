@@ -1,6 +1,9 @@
 from pathlib import Path
 from collections import Counter
+from datetime import datetime, timedelta
 import sys
+
+BRUTE_FORCE_WINDOW_MINUTES = 5
 
 def parse_log_line(line):
     parts = line.strip().split()
@@ -29,6 +32,31 @@ def detect_bruteforce(count):
         return 70
     elif count >= 5:
         return 60
+    return 0
+
+def detect_bruteforce_window(timestamps):
+    timestamps = sorted(timestamps)
+
+    if len(timestamps) < 5:
+        return 0
+
+    window = timedelta(minutes=BRUTE_FORCE_WINDOW_MINUTES)
+
+    for i in range(len(timestamps)):
+        start_time = timestamps[i]
+        count = 1
+
+        for j in range(i + 1, len(timestamps)):
+            if timestamps[j] - start_time <= window:
+                count += 1
+            else:
+                break
+
+        risk_score = detect_bruteforce(count)
+
+        if risk_score > 0:
+            return risk_score
+
     return 0
 
 def detect_success_after_failure(count):
@@ -61,13 +89,26 @@ def main():
 
     failed_logins = 0
     failed_ips = []
+    failed_timestamps_by_ip = {}
 
     with open(log_file, "r") as file:
         for line in file:
             if "LOGIN_FAILED" in line:
                 failed_logins += 1
-                ip = line.split("ip=")[1].strip()
+
+                timestamp, event, username, ip = parse_log_line(line)
+
                 failed_ips.append(ip)
+
+                if ip not in failed_timestamps_by_ip:
+                    failed_timestamps_by_ip[ip] = []
+
+                parsed_time = datetime.strptime(
+                   timestamp,
+                   "%Y-%m-%d %H:%M:%S"
+                )
+
+                failed_timestamps_by_ip[ip].append(parsed_time)
 
     print(f"Failed login attempts: {failed_logins}")
 
@@ -79,14 +120,14 @@ def main():
 
     print("\nSuspicious IPs:")
 
-    for ip, count in ip_counts.items():
-        risk_score = detect_bruteforce(count)
+    for ip, timestamps in failed_timestamps_by_ip.items():
+        risk_score = detect_bruteforce_window(timestamps)
 
         if risk_score > 0:
             severity = get_severity(risk_score)
             print(
                 f"{severity}: Possible brute-force attack from {ip} "
-                f"with {count} failed attempts "
+                f"within {BRUTE_FORCE_WINDOW_MINUTES} minutes "
                 f"(risk score: {risk_score})"
             )
 
@@ -166,14 +207,14 @@ def main():
             report.write(f"{ip}: {count}\n")
 
         report.write("\nBrute-force detections:\n")
-        for ip, count in ip_counts.items():
-            risk_score = detect_bruteforce(count)
+        for ip, timestamps in failed_timestamps_by_ip.items():
+            risk_score = detect_bruteforce_window(timestamps)
 
             if risk_score > 0:
                 severity = get_severity(risk_score)
                 report.write(
                     f"{severity}: Possible brute-force attack from {ip} "
-                    f"with {count} failed attempts "
+                    f"within {BRUTE_FORCE_WINDOW_MINUTES} minutes "
                     f"(risk score: {risk_score})\n"
                 )
 
