@@ -155,6 +155,7 @@ def main():
             result = parse_log_line(line)
 
             if result is None:
+                print(f"Malformed log entry skipped: {line.strip()}")
                 continue
 
             timestamp, event, username, ip = result
