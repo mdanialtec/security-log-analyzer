@@ -104,6 +104,18 @@ class TestSeverity(unittest.TestCase):
 
         self.assertIsNone(parse_log_line(line))
 
+    def test_empty_username(self):
+        line = "2026-09-04 18:02:05 LOGIN_FAILED user= ip=10.0.0.15"
+
+        self.assertIsNone(parse_log_line(line))
+
+    def test_empty_ip(self):
+        line = "2026-09-04 18:02:05 LOGIN_FAILED user=admin ip="
+
+        self.assertIsNone(parse_log_line(line))
+
+    
+
 
 
 if __name__ == "__main__":

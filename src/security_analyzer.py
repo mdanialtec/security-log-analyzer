@@ -14,8 +14,11 @@ def parse_log_line(line):
     try:
         timestamp = parts[0] + " " + parts[1]
         event = parts[2]
-        username = parts[3].split("=")[1]
-        ip = parts[4].split("=")[1]
+        username = parts[3].split("=", 1)[1]
+        ip = parts[4].split("=", 1)[1]
+
+        if not username or not ip:
+            return None
 
         datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
 
@@ -183,12 +186,13 @@ def main():
                 )
 
                 successful_after_failure[ip] = failed_before_success[ip]
+                del failed_before_success[ip]
 
                 if risk_score > 0:
                     severity = get_severity(risk_score)
                     print(
                         f"{severity}: {ip} had "
-                        f"{failed_before_success[ip]} failed attempts "
+                        f"{successful_after_failure[ip]} failed attempts "
                         f"before a successful login "
                         f"(risk score: {risk_score})"
                     ) 
