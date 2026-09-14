@@ -3,6 +3,8 @@ Security Log Analyzer Report
 
 Total failed login attempts: 10
 
+Malformed log entries: 1
+
 Failed login attempts by IP:
 10.0.0.15: 5
 10.0.0.25: 2

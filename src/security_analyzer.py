@@ -8,12 +8,21 @@ BRUTE_FORCE_WINDOW_MINUTES = 5
 def parse_log_line(line):
     parts = line.strip().split()
 
-    timestamp = parts[0] + " " + parts[1]
-    event = parts[2]
-    username = parts[3].split("=")[1]
-    ip = parts[4].split("=")[1]
+    if len(parts) != 5:
+        return None
 
-    return timestamp, event, username, ip
+    try:
+        timestamp = parts[0] + " " + parts[1]
+        event = parts[2]
+        username = parts[3].split("=")[1]
+        ip = parts[4].split("=")[1]
+
+        datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+
+        return timestamp, event, username, ip
+
+    except (IndexError, ValueError):
+        return None
 
 def get_severity(risk_score):
     if risk_score >= 80:
@@ -90,13 +99,20 @@ def main():
     failed_logins = 0
     failed_ips = []
     failed_timestamps_by_ip = {}
+    malformed_logs = 0
 
     with open(log_file, "r") as file:
         for line in file:
-            if "LOGIN_FAILED" in line:
-                failed_logins += 1
+            result = parse_log_line(line)
 
-                timestamp, event, username, ip = parse_log_line(line)
+            if result is None:
+                malformed_logs += 1
+                continue
+
+            timestamp, event, username, ip = result
+
+            if event == "LOGIN_FAILED":
+                failed_logins += 1
 
                 failed_ips.append(ip)
 
@@ -104,13 +120,13 @@ def main():
                     failed_timestamps_by_ip[ip] = []
 
                 parsed_time = datetime.strptime(
-                   timestamp,
-                   "%Y-%m-%d %H:%M:%S"
+                    timestamp,
+                    "%Y-%m-%d %H:%M:%S"
                 )
 
                 failed_timestamps_by_ip[ip].append(parsed_time)
-
     print(f"Failed login attempts: {failed_logins}")
+    print(f"Malformed log entries: {malformed_logs}")
 
     ip_counts = Counter(failed_ips)
 
@@ -136,7 +152,12 @@ def main():
 
     with open(log_file, "r") as file:
         for line in file:
-            timestamp, event, username, ip = parse_log_line(line)
+            result = parse_log_line(line)
+
+            if result is None:
+                continue
+
+            timestamp, event, username, ip = result
             print(timestamp, event, username, ip)
     print("\nSuccessful logins after failed attempts:")
 
@@ -145,7 +166,12 @@ def main():
 
     with open(log_file, "r") as file:
         for line in file:
-            timestamp, event, username, ip = parse_log_line(line)
+            result = parse_log_line(line)
+
+            if result is None:
+                continue
+
+            timestamp, event, username, ip = result
 
             if event == "LOGIN_FAILED":
                 failed_before_success[ip] = failed_before_success.get(ip, 0) + 1
@@ -173,7 +199,12 @@ def main():
 
     with open(log_file, "r") as file:
         for line in file:
-            timestamp, event, username, ip = parse_log_line(line)
+            result = parse_log_line(line)
+
+            if result is None:
+                continue
+
+            timestamp, event, username, ip = result
 
             if event == "LOGIN_FAILED":
                 if ip not in users_by_ip:
@@ -201,6 +232,7 @@ def main():
         report.write("===========================\n\n")
 
         report.write(f"Total failed login attempts: {failed_logins}\n\n")
+        report.write(f"Malformed log entries: {malformed_logs}\n\n")
 
         report.write("Failed login attempts by IP:\n")
         for ip, count in ip_counts.items():
