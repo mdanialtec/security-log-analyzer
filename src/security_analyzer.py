@@ -63,6 +63,22 @@ def parse_any_log_line(line):
 
     return parse_log_line(line)
 
+def create_alert(alert_type, source_ip, severity, risk_score, description):
+    return {
+        "alert_type": alert_type,
+        "source_ip": source_ip,
+        "severity": severity,
+        "risk_score": risk_score,
+        "description": description
+    }
+
+def save_alerts(alerts, log_file):
+    alerts_file = Path("reports") / f"alerts_{log_file.name}.json"
+
+    with open(alerts_file, "w") as file:
+        json.dump(alerts, file, indent=4)
+
+    return alerts_file
 
 def get_severity(risk_score):
     if risk_score >= 80:
@@ -140,6 +156,7 @@ def main():
     failed_ips = []
     failed_timestamps_by_ip = {}
     malformed_logs = 0
+    alerts = []
 
     with open(log_file, "r") as file:
         for line in file:
@@ -181,11 +198,23 @@ def main():
 
         if risk_score > 0:
             severity = get_severity(risk_score)
-            print(
-                f"{severity}: Possible brute-force attack from {ip} "
-                f"within {BRUTE_FORCE_WINDOW_MINUTES} minutes "
-                f"(risk score: {risk_score})"
+
+            alert = create_alert(
+                "brute_force",
+                ip,
+                severity,
+                risk_score,
+                f"Possible brute-force attack within "
+                f"{BRUTE_FORCE_WINDOW_MINUTES} minutes"
             )
+
+            alerts.append(alert)
+
+            print(
+                f"{alert['severity']}: {alert['description']} from "
+                f"{alert['source_ip']} "
+                f"(risk score: {alert['risk_score']})"
+            )  
 
 
     print("\nParsed events:")
@@ -227,11 +256,21 @@ def main():
 
                 if risk_score > 0:
                     severity = get_severity(risk_score)
-                    print(
-                        f"{severity}: {ip} had "
+                    alert = create_alert(
+                        "successful_login_after_failures",
+                        ip,
+                        severity,
+                        risk_score,
                         f"{successful_after_failure[ip]} failed attempts "
-                        f"before a successful login "
-                        f"(risk score: {risk_score})"
+                        f"before a successful login"
+                    )
+
+                    alerts.append(alert)
+
+                    print(
+                        f"{alert['severity']}: {alert['source_ip']} "
+                        f"{alert['description']} "
+                        f"(risk score: {alert['risk_score']})"
                     ) 
                             
 
@@ -259,10 +298,22 @@ def main():
             risk_score = detect_password_spraying(len(users))
 
             severity = get_severity(risk_score)
+
+            alert = create_alert(
+                "password_spraying",
+                ip,
+                severity,
+                risk_score,
+                f"Possible password spraying targeting "
+                f"{len(users)} users"
+            )
+
+            alerts.append(alert)
+
             print(
-                f"{severity}: Possible password spraying from {ip} "
-                f"targeting {len(users)} users "
-                f"(risk score: {risk_score})"
+                f"{alert['severity']}: {alert['description']} from "
+                f"{alert['source_ip']} "
+                f"(risk score: {alert['risk_score']})"
             )
 
     print("\nGenerating security report...")
@@ -284,45 +335,20 @@ def main():
         for ip, count in ip_counts.items():
             report.write(f"{ip}: {count}\n")
 
-        report.write("\nBrute-force detections:\n")
-        for ip, timestamps in failed_timestamps_by_ip.items():
-            risk_score = detect_bruteforce_window(timestamps)
+        report.write("\nSecurity Detections\n")
+        report.write("-------------------\n\n")
 
-            if risk_score > 0:
-                severity = get_severity(risk_score)
-                report.write(
-                    f"{severity}: Possible brute-force attack from {ip} "
-                    f"within {BRUTE_FORCE_WINDOW_MINUTES} minutes "
-                    f"(risk score: {risk_score})\n"
-                )
-
-        report.write("\nSuccessful logins after failed attempts:\n")
-
-        for ip, count in successful_after_failure.items():
-            risk_score = detect_success_after_failure(count)
-
-            if risk_score > 0:
-                severity = get_severity(risk_score)
-                report.write(
-                    f"{severity}: {ip} had {count} failed attempts "
-                    f"before a successful login "
-                    f"(risk score: {risk_score})\n"
-                )
-
-        report.write("\nPassword spraying detections:\n")
-
-        for ip, users in users_by_ip.items():
-            if len(users) >= 3:
-                risk_score = detect_password_spraying(len(users))
-                severity = get_severity(risk_score)
-
-                report.write(
-                    f"{severity}: Possible password spraying from {ip} "
-                    f"targeting {len(users)} users "
-                    f"(risk score: {risk_score})\n"
-                )
+        for number, alert in enumerate(alerts, start=1):
+            report.write(f"{number}. {alert['alert_type']}\n")
+            report.write(f"   Severity: {alert['severity']}\n")
+            report.write(f"   Risk score: {alert['risk_score']}\n")
+            report.write(f"   Source IP: {alert['source_ip']}\n")
+            report.write(f"   Description: {alert['description']}\n\n")
 
     print(f"Report saved to: {report_file}")
+
+    alerts_file = save_alerts(alerts, log_file)
+    print(f"Alerts saved to: {alerts_file}")
 
 if __name__ == "__main__":
     main()

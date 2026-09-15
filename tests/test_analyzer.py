@@ -1,10 +1,14 @@
 import unittest
+import json
+from pathlib import Path
 from datetime import datetime, timedelta
 
 from src.security_analyzer import (
     parse_log_line,
     parse_json_log_line,
     parse_any_log_line,
+    create_alert,
+    save_alerts,
     get_severity,
     detect_bruteforce,
     detect_bruteforce_window,
@@ -170,6 +174,93 @@ class TestSeverity(unittest.TestCase):
                 "10.0.0.15"
             )
         )
+
+    def test_create_alert(self):
+        alert = create_alert(
+            "brute_force",
+            "10.0.0.15",
+            "HIGH",
+            60,
+            "Possible brute-force attack"
+        )
+
+        self.assertEqual(alert["alert_type"], "brute_force")
+        self.assertEqual(alert["source_ip"], "10.0.0.15")
+        self.assertEqual(alert["severity"], "HIGH")
+        self.assertEqual(alert["risk_score"], 60)
+        self.assertEqual(
+            alert["description"],
+            "Possible brute-force attack"
+        )
+
+    def test_bruteforce_alert(self):
+        alert = create_alert(
+            "brute_force",
+            "10.0.0.15",
+            "HIGH",
+            60,
+            "Possible brute-force attack"
+        )
+
+        self.assertEqual(alert["alert_type"], "brute_force")
+        self.assertEqual(alert["severity"], "HIGH")
+        self.assertEqual(alert["risk_score"], 60)
+
+    def test_successful_login_after_failures_alert(self):
+        alert = create_alert(
+            "successful_login_after_failures",
+            "10.0.0.25",
+            "CRITICAL",
+            80,
+            "2 failed attempts before a successful login"
+        )
+
+        self.assertEqual(
+            alert["alert_type"],
+            "successful_login_after_failures"
+        )
+        self.assertEqual(alert["severity"], "CRITICAL")
+        self.assertEqual(alert["risk_score"], 80)
+
+    def test_password_spraying_alert(self):
+        alert = create_alert(
+            "password_spraying",
+            "10.0.0.30",
+            "MEDIUM",
+            40,
+            "Possible password spraying targeting 3 users"
+        )
+
+        self.assertEqual(
+            alert["alert_type"],
+            "password_spraying"
+        )
+        self.assertEqual(alert["severity"], "MEDIUM")
+        self.assertEqual(alert["risk_score"], 40)
+
+    def test_save_alerts(self):
+        alerts = [
+            create_alert(
+                "brute_force",
+                "10.0.0.15",
+                "HIGH",
+                60,
+                "Possible brute-force attack"
+            )
+        ]
+
+        log_file = Path("sample.log")
+
+        alerts_file = save_alerts(alerts, log_file)
+
+        self.assertTrue(alerts_file.exists())
+
+        with open(alerts_file, "r") as file:
+            saved_alerts = json.load(file)
+
+        self.assertEqual(saved_alerts, alerts)
+
+        alerts_file.unlink()
     
 
 

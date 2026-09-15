@@ -221,3 +221,6 @@ __marimo__/
 # Generated security reports
 reports/*.txt
 
+# Generated security alerts
+reports/*.json
+
