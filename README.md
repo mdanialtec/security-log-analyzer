@@ -1,80 +1,32 @@
 # Security Log Analyzer
 
-A Python-based security log analyzer for detecting suspicious authentication activity and generating security reports.
+A Python-based security log analyzer for detecting suspicious authentication activity and generating security reports and structured security alerts.
+
+This project was created as a learning project to practice security monitoring, log analysis, detection rules, risk scoring, alert generation, and security reporting.
 
 ## Features
 
-The analyzer processes authentication logs and detects several types of suspicious activity:
+The analyzer supports both traditional text logs and JSON Lines (JSONL) logs.
+
+It can detect:
 
 - Failed login attempts
 - Possible brute-force attacks
-- Successful logins after multiple failed attempts
+- Successful logins after failed attempts
 - Possible password spraying
+- Malformed log entries
 - Risk scores
 - Severity levels
+- Structured JSON security alerts
+- Timestamped alerts
 - Security report generation
-- Basic error handling
 - Unit tests
 
-## Detection Rules
+## Supported Log Formats
 
-### Brute-force Detection
+### Text Log
 
-The analyzer counts failed login attempts from each IP address.
-
-| Failed attempts | Risk score | Severity |
-|---|---:|---|
-| 5–7 | 60 | HIGH |
-| 8–9 | 70 | HIGH |
-| 10+ | 80 | CRITICAL |
-
-### Successful Login After Failed Attempts
-
-A successful login after previous failed attempts is flagged for investigation.
-
-This detection currently assigns a risk score of 80 (CRITICAL).
-
-### Password Spraying
-
-The analyzer checks whether one IP address has failed login attempts against multiple usernames.
-
-| Targeted users | Risk score | Severity |
-|---|---:|---|
-| 3–4 | 40 | MEDIUM |
-| 5–6 | 50 | MEDIUM |
-| 7+ | 60 | HIGH |
-
-## Severity Levels
-
-Risk scores are converted into severity levels:
-
-- **LOW:** 0–29
-- **MEDIUM:** 30–59
-- **HIGH:** 60–79
-- **CRITICAL:** 80+
-
-## Project Structure
+Example:
 
 ```text
-security-log-analyzer/
-├── reports/
-│   └── security_report.txt
-├── src/
-│   └── security_analyzer.py
-├── tests/
-│   └── test_analyzer.py
-├── .gitignore
-├── README.md
-└── sample.log
-
-## How to Run
-
-Make sure Python is installed, then run:
-
-```powershell
-python src/security_analyzer.py
-
-The analyzer reads `sample.log` and generates:
-
-```text
-reports/security_report.txt
+2026-09-04 18:02:05 LOGIN_FAILED user=admin ip=10.0.0.15
