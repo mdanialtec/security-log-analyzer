@@ -2,6 +2,7 @@ from pathlib import Path
 from collections import Counter
 from datetime import datetime, timedelta
 import sys
+import json
 
 BRUTE_FORCE_WINDOW_MINUTES = 5
 
@@ -34,6 +35,34 @@ def parse_log_line(line):
 
     except (IndexError, ValueError):
         return None
+
+def parse_json_log_line(line):
+    try:
+        data = json.loads(line)
+
+        timestamp = data["timestamp"]
+        event = data["event"]
+        username = data["username"]
+        ip = data["ip"]
+
+        if not timestamp or not event or not username or not ip:
+            return None
+
+        datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+
+        return timestamp, event, username, ip
+
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None
+
+def parse_any_log_line(line):
+    line = line.strip()
+
+    if line.startswith("{"):
+        return parse_json_log_line(line)
+
+    return parse_log_line(line)
+
 
 def get_severity(risk_score):
     if risk_score >= 80:
@@ -94,7 +123,7 @@ def detect_password_spraying(user_count):
     return 0
 
 def main():
-    log_file = Path("sample.log")
+    log_file = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("sample.log")
 
     print("Security Log Analyzer")
     print(f"Reading log file: {log_file}")
@@ -114,7 +143,7 @@ def main():
 
     with open(log_file, "r") as file:
         for line in file:
-            result = parse_log_line(line)
+            result = parse_any_log_line(line)
 
             if result is None:
                 malformed_logs += 1
@@ -163,7 +192,7 @@ def main():
 
     with open(log_file, "r") as file:
         for line in file:
-            result = parse_log_line(line)
+            result = parse_any_log_line(line)
 
             if result is None:
                 print(f"Malformed log entry skipped: {line.strip()}")
@@ -178,7 +207,7 @@ def main():
 
     with open(log_file, "r") as file:
         for line in file:
-            result = parse_log_line(line)
+            result = parse_any_log_line(line)
 
             if result is None:
                 continue
@@ -212,7 +241,7 @@ def main():
 
     with open(log_file, "r") as file:
         for line in file:
-            result = parse_log_line(line)
+            result = parse_any_log_line(line)
 
             if result is None:
                 continue
@@ -238,11 +267,15 @@ def main():
 
     print("\nGenerating security report...")
 
-    report_file = Path("reports/security_report.txt")
+    report_file = Path("reports") / f"security_report_{log_file.name}.txt"
+    total_log_entries = sum(1 for _ in open(log_file, "r"))
 
     with open(report_file, "w") as report:
         report.write("Security Log Analyzer Report\n")
         report.write("===========================\n\n")
+        report.write(f"Input file: {log_file.name}\n")
+        report.write(f"Report generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        report.write(f"Total log entries: {total_log_entries}\n\n")
 
         report.write(f"Total failed login attempts: {failed_logins}\n\n")
         report.write(f"Malformed log entries: {malformed_logs}\n\n")

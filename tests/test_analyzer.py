@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 
 from src.security_analyzer import (
     parse_log_line,
+    parse_json_log_line,
+    parse_any_log_line,
     get_severity,
     detect_bruteforce,
     detect_bruteforce_window,
@@ -114,6 +116,60 @@ class TestSeverity(unittest.TestCase):
 
         self.assertIsNone(parse_log_line(line))
 
+    def test_valid_json_log(self):
+        line = '{"timestamp": "2026-09-04 18:02:05", "event": "LOGIN_FAILED", "username": "admin", "ip": "10.0.0.15"}'
+
+        result = parse_json_log_line(line)
+
+        self.assertEqual(
+            result,
+            (
+                "2026-09-04 18:02:05",
+                "LOGIN_FAILED",
+                "admin",
+                "10.0.0.15"
+            )
+        )
+
+    def test_malformed_json_log(self):
+        line = '{"timestamp": "2026-09-04 18:02:05", "event": "LOGIN_FAILED"'
+
+        self.assertIsNone(parse_json_log_line(line))
+
+    def test_json_missing_field(self):
+        line = '{"timestamp": "2026-09-04 18:02:05", "event": "LOGIN_FAILED", "username": "admin"}'
+
+        self.assertIsNone(parse_json_log_line(line))
+
+    def test_parse_any_log_line_text(self):
+        line = "2026-09-04 18:02:05 LOGIN_FAILED user=admin ip=10.0.0.15"
+
+        result = parse_any_log_line(line)
+
+        self.assertEqual(
+            result,
+            (
+                "2026-09-04 18:02:05",
+                "LOGIN_FAILED",
+                "admin",
+                "10.0.0.15"
+            )
+        )
+
+    def test_parse_any_log_line_json(self):
+        line = '{"timestamp": "2026-09-04 18:02:05", "event": "LOGIN_FAILED", "username": "admin", "ip": "10.0.0.15"}'
+
+        result = parse_any_log_line(line)
+
+        self.assertEqual(
+            result,
+            (
+                "2026-09-04 18:02:05",
+                "LOGIN_FAILED",
+                "admin",
+                "10.0.0.15"
+            )
+        )
     
 
 
