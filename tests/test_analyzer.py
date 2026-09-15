@@ -184,6 +184,7 @@ class TestSeverity(unittest.TestCase):
             "Possible brute-force attack"
         )
 
+        self.assertIn("timestamp", alert)
         self.assertEqual(alert["alert_type"], "brute_force")
         self.assertEqual(alert["source_ip"], "10.0.0.15")
         self.assertEqual(alert["severity"], "HIGH")
@@ -192,6 +193,17 @@ class TestSeverity(unittest.TestCase):
             alert["description"],
             "Possible brute-force attack"
         )
+
+    def test_create_alert_has_timestamp(self):
+        alert = create_alert(
+            "brute_force",
+            "10.0.0.15",
+            "HIGH",
+            60,
+            "Possible brute-force attack"
+        )
+
+        self.assertIn("timestamp", alert)
 
     def test_bruteforce_alert(self):
         alert = create_alert(

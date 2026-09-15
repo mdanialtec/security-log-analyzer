@@ -65,6 +65,7 @@ def parse_any_log_line(line):
 
 def create_alert(alert_type, source_ip, severity, risk_score, description):
     return {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "alert_type": alert_type,
         "source_ip": source_ip,
         "severity": severity,
@@ -319,7 +320,8 @@ def main():
     print("\nGenerating security report...")
 
     report_file = Path("reports") / f"security_report_{log_file.name}.txt"
-    total_log_entries = sum(1 for _ in open(log_file, "r"))
+    with open(log_file, "r") as file:
+        total_log_entries = sum(1 for _ in file)
 
     with open(report_file, "w") as report:
         report.write("Security Log Analyzer Report\n")
